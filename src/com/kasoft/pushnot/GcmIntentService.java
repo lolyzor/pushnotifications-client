@@ -107,7 +107,7 @@ public class GcmIntentService extends IntentService {
         appMainIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         
         PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                appMainIntent, PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_ONE_SHOT);        
+                appMainIntent, PendingIntent.FLAG_UPDATE_CURRENT);        
 
         
         NotificationCompat.Builder mBuilder =
