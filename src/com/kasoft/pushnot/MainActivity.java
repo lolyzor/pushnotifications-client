@@ -33,7 +33,9 @@ import android.view.View;
 import android.widget.TextView;
 
 public class MainActivity extends Activity{
-	 public static final String EXTRA_MESSAGE = "message";
+	
+	
+	public static final String EXTRA_MESSAGE = "message";
 	    public static final String PROPERTY_REG_ID = "registration_id";
 	    private static final String PROPERTY_APP_VERSION = "appVersion";
 	    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
@@ -52,8 +54,25 @@ public class MainActivity extends Activity{
 	    GoogleCloudMessaging gcm;
 	    AtomicInteger msgId = new AtomicInteger();
 	    Context context;
-
-	    String regid;
+	    boolean checked;
+	    String regid;	    
+	    
+	    @Override
+		protected void onNewIntent(Intent intent) {
+			// TODO Auto-generated method stub
+			super.onNewIntent(intent);
+			String title = intent.getStringExtra("title");
+	        String form = intent.getStringExtra("form");
+	        TextView displayWidget = (TextView) findViewById(R.id.display);
+	    	if(title != null && form != null){
+	        	TextView titleWidget = (TextView) findViewById(R.id.title);
+	        	TextView formWidget = (TextView) findViewById(R.id.form);
+	        	
+	        	titleWidget.setText(title);
+	        	formWidget.setText(form);
+	        	displayWidget.setText("Zadnja poruka");
+	        }
+		}
 
 	    @Override
 	    public void onCreate(Bundle savedInstanceState) {
@@ -74,21 +93,24 @@ public class MainActivity extends Activity{
 	                display.setText("Registriranje aplikacije u toku...");
 	            }
 	            else{
-	            	boolean isSent = isSent(context);
+	            	boolean isSent = isSent();
 		            if(!isSent){
 		            	new AjaxRequest(regid,"4.0").execute(new String[]{});
 		            	display.setText("Aplikacija salje informacije serveru");
 		            }
-		            display.setText("Aplikacija ceka na nove poruke..");
+		            else{
+		            	if(!setResponseMessage()){
+		            		display.setText("Aplikacija ceka na nove poruke..");
+		            	}
+		            }
 	            }
 	        } else {
 	        	display.setText("Server nije moguce konaktirati");
 	            Log.i(TAG, "No valid Google Play Services APK found.");
 	        }
-	        setResponseMessage();
 	    }
 	    
-	    public void setResponseMessage(){
+	    public boolean setResponseMessage(){
 	    	Intent thisIntent = getIntent();
 	        String title = thisIntent.getStringExtra("title");
 	        String form = thisIntent.getStringExtra("form");
@@ -100,15 +122,16 @@ public class MainActivity extends Activity{
 	        	titleWidget.setText(title);
 	        	formWidget.setText(form);
 	        	displayWidget.setText("Zadnja poruka");
+	        	return true;
 	        }
-	    	
+	    	return false;
 	    }
 
 	    @Override
 	    protected void onResume() {
 	        super.onResume();
 	        // Check device for Play Services APK.
-	        checkPlayServices();
+	        setResponseMessage();
 	        //setResponseMessage();
 	    }
 	    
@@ -150,18 +173,26 @@ public class MainActivity extends Activity{
 	        editor.putInt(PROPERTY_APP_VERSION, appVersion);
 	        editor.commit();
 	    }
-	    private void storeKey(Context context, String key,String value) {
+	    private void storeKey(String key,String value) {
 	        final SharedPreferences prefs = getGcmPreferences(context);
 	        SharedPreferences.Editor editor = prefs.edit();
 	        editor.putString(key, value);
 	        editor.commit();
 	    }
-	    private boolean isSent(Context context) {
+	    private boolean isSent() {
 	    	boolean sent = false;
 	        final SharedPreferences prefs = getGcmPreferences(context);
 	        sent = prefs.getBoolean("keysent", false);
 	        return sent;	        
 	    }
+	    
+	    private void storeSent(boolean value) {
+	    	final SharedPreferences prefs = getGcmPreferences(context);
+	        SharedPreferences.Editor editor = prefs.edit();
+	        editor.putBoolean("keysent", value);
+	        editor.commit();	        
+	    }
+
 
 	    /**
 	     * Gets the current registration ID for application on GCM service, if there is one.
@@ -230,6 +261,8 @@ public class MainActivity extends Activity{
 	            @Override
 	            protected void onPostExecute(String msg) {
 	                //mDisplay.append(msg + "\n");
+	            	TextView display = (TextView) findViewById(R.id.display);
+	            	display.setText("Registracija uspjesna");
 	            }
 	        }.execute(null, null, null);
 	    }
@@ -302,7 +335,16 @@ public class MainActivity extends Activity{
 	      new AjaxRequest(regid,"4.0").execute(new String[]{});
 	    }
 	    class AjaxRequest extends AsyncTask<String,Void,String>{
-	    	private final String id;
+	    	@Override
+			protected void onPostExecute(String result) {
+				// TODO Auto-generated method stub
+				super.onPostExecute(result);
+				TextView display = (TextView) findViewById(R.id.display);
+            	display.setText("Aplikacija ceka na nove poruke");
+            	storeSent(true);
+			}
+
+			private final String id;
 	    	private final String androidV;
 	    	public AjaxRequest(String id,String androidV){
 	    		this.id = id;
@@ -338,7 +380,7 @@ public class MainActivity extends Activity{
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
+							// TODO Autochecked-generated catch block
 							e.printStackTrace();
 						}
                         Log.i("json response",response);

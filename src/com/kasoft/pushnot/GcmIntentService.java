@@ -27,6 +27,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.RingtoneManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
@@ -99,22 +100,24 @@ public class GcmIntentService extends IntentService {
         mNotificationManager = (NotificationManager)
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        Intent appMainIntent = new Intent(this, MainActivity.class);
+        Intent appMainIntent = new Intent(getApplicationContext(), MainActivity.class);
         appMainIntent.putExtra("title", title);
         appMainIntent.putExtra("form", form);
+        //appMainIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        appMainIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                appMainIntent, PendingIntent.FLAG_CANCEL_CURRENT);        
+        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                appMainIntent, PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_ONE_SHOT);        
 
         
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(this)
         .setSmallIcon(R.drawable.ic_stat_gcm)
-        .setContentTitle("Obavijest")
+        .setContentTitle(title)
         .setStyle(new NotificationCompat.BigTextStyle()
-        .bigText("Prodaja"))        
-        .setContentText(msg);
-
+        .bigText(form))
+        .setContentText(form);
+        mBuilder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
         mBuilder.setContentIntent(contentIntent);
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
     }
